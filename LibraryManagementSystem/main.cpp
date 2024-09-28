@@ -1,6 +1,8 @@
+#define NOMINMAX
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <mysql.h>
 using namespace std;
 
 void identitySelectionInterface();
@@ -209,11 +211,22 @@ void identitySelectionInterface() {
 
 }
 
-
+const char* host = "127.0.0.1";
+const char* username = "root";
+const char* password = "123456";
+const char* database_name = "database_test";
+const int port = 3306;
 
 int main() {
 
 	identitySelectionInterface();
+
+	MYSQL* conn = mysql_init(NULL);
+
+	mysql_options(conn, MYSQL_SET_CHARSET_NAME, "GBK");
+
+	mysql_real_connect(conn, host, username, password, database_name, port, NULL, 0);
+
 
 	return 0;
 }
