@@ -1,9 +1,16 @@
 #define NOMINMAX
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <cstdlib>
 #include <string>
 #include <mysql.h>
+#include <fstream>
 using namespace std;
+
+const char* host = "127.0.0.1";
+const char* username = "root";
+const char* password = "123456";
+const int port = 3306;
 
 void identitySelectionInterface();
 
@@ -19,59 +26,97 @@ bool isUsenamePasswordMatch() {
 }
 
 void customerLoginInterface() {
+	MYSQL* conn = mysql_init(NULL);
+	mysql_real_connect(conn, host, username, password, NULL, port, NULL, 0);
+	mysql_select_db(conn, "customer_db");
+
 	cout << "欢迎光临客户登录界面！" << endl;
 	cout << "请输入用户名：" << endl;
-	string username;
-	cin >> username;
+	char customer_username[256];
+	cin >> customer_username;
 	cout << "请输入密码：" << endl;
-	string password;
-	cin >> password;
-	if (!isUsernameExist()) {
-		cout << "用户名不存在" << endl;
-		system("pause");
-		system("cls");
-		customerSelectionInterface();
-		return;
+	char customer_password[256];
+	cin >> customer_password;
+	
+	char query[512];
+	sprintf(query, "select count(*) from accounts where username = '%s' and password = '%s'", customer_username, customer_password);
+
+	mysql_query(conn, query);
+
+	MYSQL_RES* result = mysql_store_result(conn);
+
+	MYSQL_ROW row = mysql_fetch_row(result);
+	int count = atoi(row[0]);
+	if (count > 0) {
+		cout << "登录成功！" << endl;
 	}
-	if (!isUsenamePasswordMatch()) {
-		cout << "密码错误" << endl;
-		system("pause");
-		system("cls");
+	else {
+		cout << "用户名或密码错误，请重试！" << endl;
 		customerSelectionInterface();
 	}
-	cout << "登录成功！" << endl;
+
+	mysql_free_result(result);
+	mysql_close(conn);
+
 	system("pause");
 	system("cls");
-
 }
 
 void customerRegisterInterface() {
 	cout << "欢迎光临客户注册界面！" << endl;
-	cout << "设置用户名：" << endl;
-	string username;
-	cin >> username;
-	cout << "设置密码：" << endl;
-	string password1;
-	cin >> password1;
-	cout << "确认密码：" << endl;
-	string password2;
-	cin >> password2;
+	
+	// 初始化 mysql 数据库
+	MYSQL* conn = mysql_init(NULL);
+	
+	// 连接 mysql 数据库
+	mysql_real_connect(conn, host, username, password, NULL, port, NULL, 0);
 
-	if (isUsernameExist()) {
+	// 选择 customer_db 数据库
+	mysql_select_db(conn, "customer_db");
+
+	cout << "设置用户名：" << endl;
+	char customer_username[256];
+	cin >> customer_username;
+	cout << "设置密码：" << endl;
+	char customer_password1[256];
+	cin >> customer_password1;
+	cout << "确认密码：" << endl;
+	char customer_password2[256];
+	cin >> customer_password2;
+	
+	char query[512];
+	sprintf(query, "select count(*) from accounts where username = '%s'", customer_username);
+
+	mysql_query(conn, query);
+
+	MYSQL_RES* result = mysql_store_result(conn);
+
+	MYSQL_ROW row = mysql_fetch_row(result);
+	int count = atoi(row[0]);
+
+	if (count > 0) {
 		cout << "用户名已存在！请修改用户名！" << endl;
 		system("pause");
 		system("cls");
+		mysql_free_result(result);
+		mysql_close(conn);
 		customerRegisterInterface();
 		return;
 	}
 
-	if (password1 != password2) {
+
+	if (strcmp(customer_password1, customer_password2) != 0) {
 		cout << "两次密码输入不一致！请重新设置！" << endl;
 		system("pause");
 		system("cls");
 		customerRegisterInterface();
 		return;
 	}
+
+	// 创建插入 sql 语句
+	char insert_sql[256];
+	sprintf(insert_sql, "insert into accounts (username, password) values ('%s', '%s')", customer_username, customer_password1);
+	mysql_query(conn, insert_sql);
 
 	cout << "注册成功！返回客户选择界面" << endl;
 	system("pause");
@@ -211,22 +256,58 @@ void identitySelectionInterface() {
 
 }
 
-const char* host = "127.0.0.1";
-const char* username = "root";
-const char* password = "123456";
-const char* database_name = "database_test";
-const int port = 3306;
 
 int main() {
 
 	identitySelectionInterface();
 
+	/*
+	// 初始化 mysql 连接
 	MYSQL* conn = mysql_init(NULL);
+	if (conn == NULL) {
+		cerr << "mysql_init() failed" << endl;
+		return EXIT_FAILURE;
+	}
+	cout << "mysql_init() succeeded" << endl;
 
-	mysql_options(conn, MYSQL_SET_CHARSET_NAME, "GBK");
+	// 连接到 mysql 服务器
+	if (mysql_real_connect(conn, host, username, password, NULL, port, NULL, 0) == NULL) {
+		cerr << "mysql_real_connect failed:" << mysql_error(conn) << endl;
+		mysql_close(conn);
+		return EXIT_FAILURE;
+	}
+	cout << "mysql_real_connect succeeded:" << endl;
 
-	mysql_real_connect(conn, host, username, password, database_name, port, NULL, 0);
+	// 选择数据库
+	if (mysql_select_db(conn, "customer_db")) {
+		cerr << "mysql_select_db() failed:" << mysql_error(conn) << endl;
+		mysql_close(conn);
+		return EXIT_FAILURE;
+	}
+	cout << "select db succeeded" << endl;
 
+	// 插入客户账户信息示例
+	char customer_username[256];
+	char customer_password[256];
+	cout << "请输入用户名：";
+	cin >> customer_username;
+	cout << "请输入密码：";
+	cin >> customer_password;
 
+	char insert_sql[256];
+	sprintf(insert_sql, "INSERT INTO accounts (username, password) VALUES ('%s', '%s')", customer_username, customer_password);
+	
+	if (mysql_query(conn, insert_sql)) {
+		cerr << "insert failed:" << mysql_error(conn) << endl;
+		mysql_close(conn);
+		return EXIT_FAILURE;
+	}
+	cout << "customer account inerted successfully." << endl;
+
+	// 关闭 mysql 连接
+	mysql_close(conn);
+	cout << "mysql connection closed." << endl;
+
+	*/
 	return 0;
 }
