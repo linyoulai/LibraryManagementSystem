@@ -1,10 +1,17 @@
 #define NOMINMAX
 #define _CRT_SECURE_NO_WARNINGS
+
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <windows.h>
+
 #include <iostream>
 #include <cstdlib>
 #include <string>
 #include <mysql.h>
 #include <fstream>
+#include <crow.h>
+
 using namespace std;
 
 const char* host = "127.0.0.1";
@@ -261,53 +268,5 @@ int main() {
 
 	identitySelectionInterface();
 
-	/*
-	// 初始化 mysql 连接
-	MYSQL* conn = mysql_init(NULL);
-	if (conn == NULL) {
-		cerr << "mysql_init() failed" << endl;
-		return EXIT_FAILURE;
-	}
-	cout << "mysql_init() succeeded" << endl;
-
-	// 连接到 mysql 服务器
-	if (mysql_real_connect(conn, host, username, password, NULL, port, NULL, 0) == NULL) {
-		cerr << "mysql_real_connect failed:" << mysql_error(conn) << endl;
-		mysql_close(conn);
-		return EXIT_FAILURE;
-	}
-	cout << "mysql_real_connect succeeded:" << endl;
-
-	// 选择数据库
-	if (mysql_select_db(conn, "customer_db")) {
-		cerr << "mysql_select_db() failed:" << mysql_error(conn) << endl;
-		mysql_close(conn);
-		return EXIT_FAILURE;
-	}
-	cout << "select db succeeded" << endl;
-
-	// 插入客户账户信息示例
-	char customer_username[256];
-	char customer_password[256];
-	cout << "请输入用户名：";
-	cin >> customer_username;
-	cout << "请输入密码：";
-	cin >> customer_password;
-
-	char insert_sql[256];
-	sprintf(insert_sql, "INSERT INTO accounts (username, password) VALUES ('%s', '%s')", customer_username, customer_password);
-	
-	if (mysql_query(conn, insert_sql)) {
-		cerr << "insert failed:" << mysql_error(conn) << endl;
-		mysql_close(conn);
-		return EXIT_FAILURE;
-	}
-	cout << "customer account inerted successfully." << endl;
-
-	// 关闭 mysql 连接
-	mysql_close(conn);
-	cout << "mysql connection closed." << endl;
-
-	*/
 	return 0;
 }
